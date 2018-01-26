@@ -185,8 +185,7 @@
           WantedBy=multi-user.target
         dest: /tmp/docker.service
       become: yes
-      notify:
-        - Restart docker
+      notify: Restart docker service
 
     - name: "Docker Swarm | configure nvidia"
       lineinfile:
@@ -195,11 +194,11 @@
         regexp: "^#?\s*swarm-resource"
         line: 'swarm-resource = "DOCKER_RESOURCE_GPU"'
       become: yes
-      notify:
-        - Restart docker
+      notify: Restart docker service
   handlers:
-    - name: Restart docker
+    - name: Restart docker service
       systemd:
         name: docker
         state: restarted
         daemon_reload: yes
+      become: yes
