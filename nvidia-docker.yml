@@ -1,0 +1,34 @@
+- name: Configure nvidia-docker
+  hosts: all
+  tags:
+    - bootstrap
+    - nvidia-docker
+  vars:
+    - nvidia_docker_package: nvidia-docker2
+    - nvidia_docker_repositories:
+        - "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+        - "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+        - "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+    - nvidia_docker_package_state: present
+  tasks:
+    - name: Add {{ nvidia_docker_package }} apt key
+      apt_key:
+        url: https://nvidia.github.io/nvidia-docker/gpgkey
+        id: C95B321B61E88C1809C4F759DDCAE044F796ECB0
+        state: "{{ nvidia_docker_package_state }}"
+      become: yes
+
+    - name: "{{ (nvidia_docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ nvidia_docker_package }} apt repositories"
+      apt_repository:
+        repo: "{{ item }}"
+        update_cache: yes
+        state: "{{ nvidia_docker_package_state }}"
+      with_items: "{{ nvidia_docker_repositories }}"
+      become: yes
+
+    - name: "{{ (nvidia_docker_package_state == 'present') | ternary('Install', 'Remove') }} {{ nvidia_docker_package }}"
+      apt:
+        name: "{{ nvidia_docker_package }}"
+        state: "{{ nvidia_docker_package_state }}"
+        autoremove: yes
+      become: yes

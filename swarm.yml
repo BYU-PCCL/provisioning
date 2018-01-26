@@ -1,0 +1,195 @@
+# taken from: https://github.com/nextrevision/ansible-swarm-playbook
+- name: "Docker Swarm | setup manager nodes"
+  hosts: manager
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  tasks:
+    - name: Determine swarm status
+      shell: >
+        docker info | egrep '^Swarm: ' | cut -d ' ' -f2
+      register: swarm_status
+
+    - name: Create group of manager nodes already in swarm
+      add_host:
+        hostname: "{{ item }}"
+        groups: swarm_manager_operational
+      with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
+      when: "'active' in hostvars[item].swarm_status.stdout_lines"
+      run_once: true
+
+    - name: Create group of manager nodes to join to swarm
+      add_host:
+        hostname: "{{ item }}"
+        groups: swarm_manager_bootstrap
+      with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
+      when: "'active' not in hostvars[item].swarm_status.stdout_lines"
+      run_once: true
+
+- name: "Docker Swarm | setup worker nodes"
+  hosts: worker
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  tasks:
+    - name: Determine swarm status
+      shell: >
+        docker info | egrep '^Swarm: ' | cut -d ' ' -f2
+      register: swarm_status
+
+    - name: Create group of worker nodes already in swarm
+      add_host:
+        hostname: "{{ item }}"
+        groups: swarm_worker_operational
+      with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
+      when: "'active' in hostvars[item].swarm_status.stdout_lines"
+      run_once: true
+
+    - name: Create group of worker nodes to join to swarm
+      add_host:
+        hostname: "{{ item }}"
+        groups: swarm_worker_bootstrap
+      with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
+      when: "'active' not in hostvars[item].swarm_status.stdout_lines"
+      run_once: true
+
+- name: "Docker Swarm | initialize swarm and manager node"
+  hosts: swarm_manager_bootstrap[0]
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  tasks:
+    - name: Initialize swarm
+      shell: >
+        docker swarm init
+        --advertise-addr={{ swarm_iface | default('eth0') }}:2377
+      when: "'swarm_manager_operational' not in groups"
+      register: bootstrap_first_node
+
+    - name: Add initialized host to group of manager nodes already in swarm
+      add_host:
+        hostname: "{{ item }}"
+        groups: swarm_manager_operational
+      with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
+      when: bootstrap_first_node | changed
+
+- name: "Docker Swarm | setup swarm join tokens"
+  hosts: swarm_manager_operational[0]
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  gather_facts: yes
+  vars:
+    iface: "{{ swarm_iface | default('eth0') }}"
+  tasks:
+    - name: Retrieve swarm manager token
+      shell: docker swarm join-token -q manager
+      register: swarm_manager_token
+
+    - name: Retrieve swarm worker token
+      shell: docker swarm join-token -q worker
+      register: swarm_worker_token
+
+    - name: Populate list of manager IPs
+      add_host:
+        hostname: "{{ hostvars[item]['ansible_' + iface]['ipv4']['address'] }}"
+        groups: swarm_manager_ips
+      with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
+
+- name: "Docker Swarm | join additional manager nodes to swarm"
+  hosts: swarm_manager_bootstrap:!swarm_manager_operational
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  vars:
+    token: "{{ hostvars[groups['swarm_manager_operational'][0]]['swarm_manager_token']['stdout'] }}"
+  tasks:
+    - name: Join manager nodes to swarm
+      shell: >
+        docker swarm join
+        --advertise-addr={{ swarm_iface | default('eth0') }}:2377
+        --token={{ token }}
+        {{ groups['swarm_manager_ips'][0] }}:2377
+
+- name: "Docker Swarm | join worker nodes to swarm"
+  hosts: swarm_worker_bootstrap
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  vars:
+    token: "{{ hostvars[groups['swarm_manager_operational'][0]]['swarm_worker_token']['stdout'] }}"
+  tasks:
+    - name: Join worker nodes to swarm
+      shell: >
+        docker swarm join
+        --advertise-addr={{ swarm_iface | default('eth0') }}:2377
+        --token={{ token }}
+        {{ groups['swarm_manager_ips'][0] }}:2377
+
+        - name: "Docker Swarm | join additional manager nodes to swarm"
+          hosts: swarm_manager_bootstrap:!swarm_manager_operational
+
+- name: "Docker Swarm | configure nvidia"
+  hosts: all
+  become: yes
+  tags:
+    - bootstrap
+    - docker-swarm
+  tasks:
+    - name: "Docker Swarm | gather gpu information"
+      command: nvidia-smi -q
+      register: nvidia_smi
+
+    - name: "Docker Swarm | configure nvidia"
+      copy:
+        content: |+
+          [Unit]
+          Description=Docker Application Container Engine
+          Documentation=https://docs.docker.com
+          After=network-online.target docker.socket firewalld.service
+          Wants=network-online.target
+          Requires=docker.socket
+
+          [Service]
+          Type=notify
+          # the default is not to use systemd for cgroups because the delegate issues still
+          # exists and systemd currently does not support the cgroup feature set required
+          # for containers run by docker
+          ExecStart=/usr/bin/dockerd -H fd:// --default-runtime=nvidia {{ nvidia_smi.stdout | regex_findall('UUID\s+:\s+(GPU-\w+)-.*') | map('regex_replace', '^(.*)$', '--node-generic-resource gpu=\1') | list | join(' ') }}
+          ExecReload=/bin/kill -s HUP $MAINPID
+          LimitNOFILE=1048576
+          # Having non-zero Limit*s causes performance problems due to accounting overhead
+          # in the kernel. We recommend using cgroups to do container-local accounting.
+          LimitNPROC=infinity
+          LimitCORE=infinity
+          # Uncomment TasksMax if your systemd version supports it.
+          # Only systemd 226 and above support this version.
+          TasksMax=infinity
+          TimeoutStartSec=0
+          # set delegate yes so that systemd does not reset the cgroups of docker containers
+          Delegate=yes
+          # kill only the docker process, not all processes in the cgroup
+          KillMode=process
+          # restart the docker process if it exits prematurely
+          Restart=on-failure
+          StartLimitBurst=3
+          StartLimitInterval=60s
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /tmp/docker.service
+      become: yes
+      notify:
+        - Restart docker
+  handlers:
+    - name: Restart docker
+      systemd:
+        name: docker
+        state: restarted
+        daemon_reload: yes

@@ -1,0 +1,48 @@
+- name: Configure nvidia
+  hosts: all
+  gather_facts: no
+  tags:
+    - bootstrap
+    - nvidia
+  vars:
+    - nvidia_package: nvidia-384
+    - nvidia_package_state: present
+  tasks:
+    - name: Blacklist nouveau kernel module
+      kernel_blacklist:
+        name: nouveau
+        blacklist_file: /etc/modprobe.d/blacklist-nouveau.conf
+        state: "{{ nvidia_package_state }}"
+      become: yes
+      notify:
+        - Reboot host
+        - Wait for host to reboot
+
+    - name: "{{ (nvidia_package_state == 'present') | ternary('Add', 'Remove') }} ppa:graphics-drivers apt repository"
+      apt_repository:
+        repo: ppa:graphics-drivers
+        update_cache: yes
+        state: "{{ nvidia_package_state }}"
+      become: yes
+
+    - name: "{{ (nvidia_package_state == 'present') | ternary('Install', 'Remove') }} {{ nvidia_package }} and cuda"
+      apt:
+        name: "{{ nvidia_package }}"
+        state: "{{ nvidia_package_state }}"
+        autoremove: yes
+      become: yes
+      notify:
+        - Reboot host
+        - Wait for host to reboot
+  handlers:
+    - name: Reboot host
+      command: shutdown -r now "Reboot triggered by Ansible"
+      async: 0
+      poll: 0
+      ignore_errors: yes
+      become: yes
+
+    - name: Wait for host to reboot
+      wait_for_connection:
+        delay: 3
+      become: no

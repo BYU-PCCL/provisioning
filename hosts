@@ -1,0 +1,17 @@
+[manager]
+monster ansible_host=monster.cs.byu.edu
+
+[worker]
+doctor ansible_host=doctor.cs.byu.edu
+ghost ansible_host=ghost.cs.byu.edu
+infinity ansible_host=infinity.cs.byu.edu
+morita ansible_host=morita.cs.byu.edu
+naga ansible_host=naga.cs.byu.edu
+reaper ansible_host=reaper.cs.byu.edu
+santaka ansible_host=santaka.cs.byu.edu
+
+[manager:vars]
+ansible_user=remote
+
+[worker:vars]
+ansible_user=remote

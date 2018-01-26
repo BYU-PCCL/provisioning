@@ -1,0 +1,74 @@
+- name: Configure docker
+  hosts: all
+  tags:
+    - bootstrap
+    - docker
+  vars:
+    - docker_package: docker-ce
+    - docker_apt_release_channel: stable
+    - docker_apt_repository: "deb https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+    - docker_package_state: present
+  tasks:
+    - name: Ensure old versions of docker are not installed
+      package:
+        name: "{{ item }}"
+        state: absent
+      become: yes
+      with_items:
+        - docker
+        - docker-engine
+
+    - name: Ensure depdencies are installed
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: yes
+      with_items:
+        - apt-transport-https
+        - ca-certificates
+
+    - name: "{{ (docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ docker_package }} apt key"
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+        state: "{{ docker_package_state }}"
+      become: yes
+
+    - name: "{{ (docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ docker_package }} repository"
+      apt_repository:
+        repo: "{{ docker_apt_repository }}"
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: "{{ (docker_package_state == 'present') | ternary('Install', 'Remove') }} {{ docker_package }}"
+      apt:
+        name: "{{ docker_package }}"
+        state: "{{ docker_package_state }}"
+        autoremove: yes
+      become: yes
+
+    - name: "{{ (docker_package_state == 'present') | ternary('Enable', 'Disable') }} Docker remote API"
+      copy:
+        content: |+
+          # /etc/systemd/system/docker-tcp.socket
+          # https://coreos.com/os/docs/latest/customizing-docker.html
+          Description=Docker Socket for the API
+
+          [Socket]
+          ListenStream=2375
+          BindIPv6Only=both
+          Service=docker.service
+
+          [Install]
+          WantedBy=sockets.target
+        dest: /etc/systemd/system/docker-tcp.socket
+      become: yes
+      notify:
+        - Restart docker
+  handlers:
+    - name: Restart docker
+      systemd:
+        name: docker
+        state: restarted
+        daemon_reload: yes
