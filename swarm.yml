@@ -187,6 +187,18 @@
       become: yes
       notify:
         - Restart docker
+
+    - name: "Docker Swarm | configure nvidia"
+      lineinfile:
+        dest: /etc/nvidia-container-runtime/config.toml
+        state: present
+        regexp: "^#?\s*swarm-resource"
+        line: 'swarm-resource = "DOCKER_RESOURCE_GPU"'
+      become: yes
+      notify:
+        - Restart docker
+
+
   handlers:
     - name: Restart docker
       systemd:
