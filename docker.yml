@@ -9,23 +9,20 @@
     - docker_apt_repository: "deb https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
     - docker_package_state: present
   tasks:
-    - name: Ensure old versions of docker are not installed
-      package:
-        name: "{{ item }}"
-        state: absent
-      become: yes
-      with_items:
-        - docker
-        - docker-engine
-
-    - name: Ensure depdencies are installed
+    - name: Ensure dependencies are installed
       apt:
-        name: "{{ item }}"
-        state: present
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
       become: yes
       with_items:
-        - apt-transport-https
-        - ca-certificates
+        - name: docker
+          state: absent
+        - name: docker-engine
+          state: absent
+        - name: apt-transport-https
+          state: present
+        - name: ca-certificates
+          state: present
 
     - name: "{{ (docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ docker_package }} apt key"
       apt_key:
@@ -51,8 +48,7 @@
     - name: "{{ (docker_package_state == 'present') | ternary('Enable', 'Disable') }} Docker remote API"
       copy:
         content: |+
-          # /etc/systemd/system/docker-tcp.socket
-          # https://coreos.com/os/docs/latest/customizing-docker.html
+          # See: https://coreos.com/os/docs/latest/customizing-docker.html
           Description=Docker Socket for the API
 
           [Socket]
@@ -64,11 +60,30 @@
           WantedBy=sockets.target
         dest: /etc/systemd/system/docker-tcp.socket
       become: yes
-      notify:
-        - Restart docker
+      notify: Restart docker socket
   handlers:
-    - name: Restart docker
+    - name: Stop docker service
       systemd:
         name: docker
+        state: stopped
+        daemon_reload: no
+      listen: Restart docker socket
+      become: yes
+
+    - name: Restart docker socket service
+      systemd:
+        name: docker-tcp.socket
         state: restarted
+        enabled: yes
         daemon_reload: yes
+      listen: Restart docker socket
+      become: yes
+
+    - name: Restart docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+        daemon_reload: yes
+      listen: Restart docker socket
+      become: yes
