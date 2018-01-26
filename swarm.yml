@@ -197,8 +197,6 @@
       become: yes
       notify:
         - Restart docker
-
-
   handlers:
     - name: Restart docker
       systemd:
