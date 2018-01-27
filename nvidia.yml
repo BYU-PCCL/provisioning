@@ -5,44 +5,66 @@
     - bootstrap
     - nvidia
   vars:
-    - nvidia_package: nvidia-384
-    - nvidia_package_state: present
+    - cudnn_url: http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
+    - packages_state: present
+    - packages:
+        # includes nvidia-390 as a dependency, but being explicit is good
+        - nvidia-cuda-dev
+        - nvidia-390
   tasks:
     - name: Blacklist nouveau kernel module
       kernel_blacklist:
         name: nouveau
         blacklist_file: /etc/modprobe.d/blacklist-nouveau.conf
-        state: "{{ nvidia_package_state }}"
+        state: "{{ packages_state }}"
       become: yes
-      notify:
-        - Reboot host
-        - Wait for host to reboot
+      notify: Reboot host
 
-    - name: "{{ (nvidia_package_state == 'present') | ternary('Add', 'Remove') }} ppa:graphics-drivers apt repository"
+    - name: Configure ppa:graphics-drivers apt repository
       apt_repository:
         repo: ppa:graphics-drivers
         update_cache: yes
-        state: "{{ nvidia_package_state }}"
+        state: "{{ packages_state }}"
       become: yes
 
-    - name: "{{ (nvidia_package_state == 'present') | ternary('Install', 'Remove') }} {{ nvidia_package }} and cuda"
+    - name: Configure nvidia and cuda
       apt:
-        name: "{{ nvidia_package }}"
-        state: "{{ nvidia_package_state }}"
+        name: "{{ item }}"
+        state: "{{ packages_state }}"
         autoremove: yes
+      with_items: "{{ packages }}"
       become: yes
-      notify:
-        - Reboot host
-        - Wait for host to reboot
+      notify: Reboot host
+
+    # TODO: check existing cuddn version
+    - name: Configure cudnn
+      unarchive:
+        src: "{{ cudnn_url }}"
+        remote_src: yes
+        dest: "{{ item.dest }}"
+        mode: u+r
+        creates: "{{ item.dest }}/{{ item.creates }}"
+        exclude: "{{ item.exclude }}"
+        extra_opts: --strip-components=2
+      with_items:
+        - exclude: cuda/lib64
+          dest: /usr/include
+          creates: cudnn.h
+        - exclude: cuda/include
+          dest: /usr/lib/x86_64-linux-gnu
+          creates: libcudnn.so
+      become: yes
   handlers:
     - name: Reboot host
       command: shutdown -r now "Reboot triggered by Ansible"
       async: 0
       poll: 0
       ignore_errors: yes
+      listen: Reboot host
       become: yes
 
     - name: Wait for host to reboot
       wait_for_connection:
         delay: 3
+      listen: Reboot host
       become: no
