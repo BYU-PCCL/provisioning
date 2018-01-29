@@ -1,34 +1,36 @@
-- name: Configure nvidia-docker
+- name: nvidia-docker
   hosts: all
   tags:
     - bootstrap
     - nvidia-docker
   vars:
-    - nvidia_docker_package: nvidia-docker2
+    - nvidia_docker_packages:
+        - name: nvidia-docker2
+    - nvidia_docker_packages_state: present
     - nvidia_docker_repositories:
         - "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
         - "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
         - "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
-    - nvidia_docker_package_state: present
   tasks:
-    - name: Add {{ nvidia_docker_package }} apt key
+    - name: nvidia-docker | Configure apt key
       apt_key:
         url: https://nvidia.github.io/nvidia-docker/gpgkey
         id: C95B321B61E88C1809C4F759DDCAE044F796ECB0
-        state: "{{ nvidia_docker_package_state }}"
+        state: "{{ nvidia_docker_packages_state }}"
       become: yes
 
-    - name: "{{ (nvidia_docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ nvidia_docker_package }} apt repositories"
+    - name: nvidia-docker | Configure apt repositories
       apt_repository:
         repo: "{{ item }}"
         update_cache: yes
-        state: "{{ nvidia_docker_package_state }}"
+        state: "{{ nvidia_docker_packages_state }}"
       with_items: "{{ nvidia_docker_repositories }}"
       become: yes
 
-    - name: "{{ (nvidia_docker_package_state == 'present') | ternary('Install', 'Remove') }} {{ nvidia_docker_package }}"
+    - name: nvidia-docker | Configure nvidia-docker
       apt:
-        name: "{{ nvidia_docker_package }}"
-        state: "{{ nvidia_docker_package_state }}"
+        name: "{{ item.name }}"
+        state: "{{ item.state | default(nvidia_docker_packages_state) }}"
         autoremove: yes
+      with_items: "{{ nvidia_docker_packages }}"
       become: yes
