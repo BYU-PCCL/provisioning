@@ -1,4 +1,4 @@
-- name: Configure ssh
+- name: ssh
   hosts: all
   gather_facts: no
   tags:
@@ -11,13 +11,13 @@
           # python3 -c 'import crypt; print(crypt.crypt("the password"))'
           password: foEY7SALC7m46
   tasks:
-    - name: Create 'sudo' group
+    - name: ssh | Create 'sudo' group
       group:
         name: sudo
         state: present
       become: yes
 
-    - name: Allow 'sudo' group to have sudo
+    - name: ssh | Allow 'sudo' group to have sudo
       lineinfile:
         dest: /etc/sudoers
         state: present
@@ -26,7 +26,7 @@
         validate: visudo -cf %s
       become: yes
 
-    - name: Create user and add to sudo group
+    - name: ssh | Create user and add to sudo group
       user:
         name: "{{ item.user }}"
         state: present
@@ -38,7 +38,7 @@
       with_items: "{{ remote_sudoers }}"
       become: yes
 
-    - name: Create new ssh key-pair on localhost
+    - name: ssh | Create new ssh key-pair on localhost
       user:
         name: "{{ lookup('env', 'USER') }}"
         generate_ssh_key: yes
@@ -47,7 +47,7 @@
       delegate_to: localhost
       become: no
 
-    - name: Upload new public ssh key
+    - name: ssh | Upload new public ssh key
       authorized_key:
         user: "{{ item.user }}"
         key: "{{ lookup('file', lookup('env','HOME') + '/' + ssh_key_file + '.pub') }}"
