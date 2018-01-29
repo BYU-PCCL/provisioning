@@ -1,0 +1,51 @@
+- name: python
+  hosts: all
+  tags:
+    - bootstrap
+    - python3
+    - python
+  vars:
+    - packages_state: present
+    - packages:
+        - name: python-dev
+          state: "{{ packages_state }}"
+        - name: python-pip
+          state: "{{ packages_state }}"
+        - name: python3-dev
+          state: "{{ packages_state }}"
+        - name: python3-pip
+          state: "{{ packages_state }}"
+    - pip2_packages:
+        - name: numpy
+          state: present
+        - name: tqdm
+          state: present
+        - name: tensorflow-gpu
+          state: present
+        - name: tensorflow-tensorboard
+          state: present
+    - pip3_packages: "{{ pip2_packages }}"
+  tasks:
+    - name: python | Configure
+      apt:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+        autoremove: yes
+      with_items: "{{ packages }}"
+      become: yes
+
+    - name: python | Configure pip2
+      pip:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+        executable: pip2
+      with_items: "{{ pip2_packages }}"
+      become: yes
+
+    - name: python | Configure pip3
+      pip:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+        executable: pip3
+      with_items: "{{ pip3_packages }}"
+      become: yes
