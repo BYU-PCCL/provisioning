@@ -1,15 +1,16 @@
-- name: Configure docker
+- name: docker
   hosts: all
   tags:
     - bootstrap
     - docker
   vars:
-    - docker_package: docker-ce
+    - docker_packages:
+        - name: docker-ce
+    - docker_packages_state: present
     - docker_apt_release_channel: stable
     - docker_apt_repository: "deb https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
-    - docker_package_state: present
   tasks:
-    - name: Ensure dependencies are installed
+    - name: docker | Configure dependencies
       apt:
         name: "{{ item.name }}"
         state: "{{ item.state }}"
@@ -24,28 +25,29 @@
         - name: ca-certificates
           state: present
 
-    - name: "{{ (docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ docker_package }} apt key"
+    - name: docker | Configure apt key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
         id: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-        state: "{{ docker_package_state }}"
+        state: "{{ docker_packages_state }}"
       become: yes
 
-    - name: "{{ (docker_package_state == 'present') | ternary('Add', 'Remove') }} {{ docker_package }} repository"
+    - name: docker | Configure repository
       apt_repository:
         repo: "{{ docker_apt_repository }}"
         state: present
         update_cache: yes
       become: yes
 
-    - name: "{{ (docker_package_state == 'present') | ternary('Install', 'Remove') }} {{ docker_package }}"
+    - name: docker | Configure
       apt:
-        name: "{{ docker_package }}"
-        state: "{{ docker_package_state }}"
+        name: "{{ item.name }}"
+        state: "{{ item.state | default(docker_packages_state) }}"
         autoremove: yes
+      with_items: "{{ docker_packages }}"
       become: yes
 
-    - name: "{{ (docker_package_state == 'present') | ternary('Enable', 'Disable') }} Docker remote API"
+    - name: docker | Configure remote API
       copy:
         content: |+
           # See: https://coreos.com/os/docs/latest/customizing-docker.html
@@ -62,7 +64,7 @@
       become: yes
       notify: Restart docker socket
   handlers:
-    - name: Stop docker service
+    - name: docker | Stop docker service
       systemd:
         name: docker
         state: stopped
@@ -70,7 +72,7 @@
       listen: Restart docker socket
       become: yes
 
-    - name: Restart docker socket service
+    - name: docker | Restart docker socket service
       systemd:
         name: docker-tcp.socket
         state: restarted
@@ -79,7 +81,7 @@
       listen: Restart docker socket
       become: yes
 
-    - name: Restart docker service
+    - name: docker | Restart docker service
       systemd:
         name: docker
         state: started
