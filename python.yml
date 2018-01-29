@@ -17,14 +17,10 @@
           state: "{{ packages_state }}"
     - pip2_packages:
         - name: numpy
-          state: present
         - name: tqdm
-          state: present
         - name: tensorflow-gpu
-          state: present
         - name: tensorflow-tensorboard
-          state: present
-    - pip3_packages: "{{ pip2_packages }}"
+    - pip3_packages: "{{ pip2_packages + [{'name': 'git+https://github.com/BYU-PCCL/hyperdrive.git'}] }}"
   tasks:
     - name: python | Configure
       apt:
@@ -37,7 +33,7 @@
     - name: python | Configure pip2
       pip:
         name: "{{ item.name }}"
-        state: "{{ item.state }}"
+        state: "{{ item.state | default('present') }}"
         executable: pip2
       with_items: "{{ pip2_packages }}"
       become: yes
@@ -45,7 +41,7 @@
     - name: python | Configure pip3
       pip:
         name: "{{ item.name }}"
-        state: "{{ item.state }}"
+        state: "{{ item.state | default('present') }}"
         executable: pip3
       with_items: "{{ pip3_packages }}"
       become: yes
