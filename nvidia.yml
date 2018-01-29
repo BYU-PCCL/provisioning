@@ -1,4 +1,4 @@
-- name: Configure nvidia
+- name: nvidia
   hosts: all
   gather_facts: no
   tags:
@@ -6,38 +6,38 @@
     - nvidia
   vars:
     - cudnn_url: http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
-    - packages_state: present
-    - packages:
+    - nvidia_packages_state: present
+    - nvidia_packages:
         # includes nvidia-390 as a dependency, but being explicit is good
-        - nvidia-cuda-dev
-        - nvidia-390
+        - name: nvidia-cuda-dev
+        - name: nvidia-390
   tasks:
-    - name: Blacklist nouveau kernel module
+    - name: nvidia | Blacklist nouveau kernel module
       kernel_blacklist:
         name: nouveau
         blacklist_file: /etc/modprobe.d/blacklist-nouveau.conf
-        state: "{{ packages_state }}"
+        state: "{{ nvidia_packages_state }}"
       become: yes
       notify: Reboot host
 
-    - name: Configure ppa:graphics-drivers apt repository
+    - name: nvidia | Configure ppa:graphics-drivers apt repository
       apt_repository:
         repo: ppa:graphics-drivers
         update_cache: yes
-        state: "{{ packages_state }}"
+        state: "{{ nvidia_packages_state }}"
       become: yes
 
-    - name: Configure nvidia and cuda
+    - name: nvidia | Configure nvidia and cuda
       apt:
-        name: "{{ item }}"
-        state: "{{ packages_state }}"
+        name: "{{ item.name }}"
+        state: "{{ nvidia_packages_state }}"
         autoremove: yes
-      with_items: "{{ packages }}"
+      with_items: "{{ nvidia_packages }}"
       become: yes
       notify: Reboot host
 
     # TODO: check existing cuddn version
-    - name: Configure cudnn
+    - name: nvidia | Configure cudnn
       unarchive:
         src: "{{ cudnn_url }}"
         remote_src: yes
@@ -55,7 +55,7 @@
           creates: libcudnn.so
       become: yes
   handlers:
-    - name: Reboot host
+    - name: nvidia | Reboot host
       command: shutdown -r now "Reboot triggered by Ansible"
       async: 0
       poll: 0
@@ -63,7 +63,7 @@
       listen: Reboot host
       become: yes
 
-    - name: Wait for host to reboot
+    - name: nvidia | Wait for host to reboot
       wait_for_connection:
         delay: 3
       listen: Reboot host
