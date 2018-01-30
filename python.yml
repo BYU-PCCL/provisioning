@@ -20,7 +20,7 @@
         - name: tqdm
         - name: tensorflow-gpu
         - name: tensorflow-tensorboard
-    - pip3_packages: "{{ pip2_packages + [{'name': 'git+https://github.com/BYU-PCCL/hyperdrive.git'}] }}"
+    - pip3_packages: "{{ pip2_packages + [{'name': 'git+https://github.com/BYU-PCCL/hyperdrive.git'}], 'state': 'latest' }}"
   tasks:
     - name: python | Configure
       apt:
