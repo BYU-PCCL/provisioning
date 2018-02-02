@@ -8,9 +8,8 @@
     - cudnn_url: http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
     - nvidia_packages_state: present
     - nvidia_packages:
-        # includes nvidia-390 as a dependency, but being explicit is good
         - name: nvidia-cuda-dev
-        - name: nvidia-390
+        # - name: nvidia-390 or nvidia-384 (automatically installed as a dependency)
   tasks:
     - name: nvidia | Blacklist nouveau kernel module
       kernel_blacklist:
@@ -32,6 +31,7 @@
         name: "{{ item.name }}"
         state: "{{ nvidia_packages_state }}"
         autoremove: yes
+        install_recommends: yes
       with_items: "{{ nvidia_packages }}"
       become: yes
       notify: Reboot host
