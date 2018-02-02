@@ -1,5 +1,5 @@
 # taken from: https://github.com/nextrevision/ansible-swarm-playbook
-- name: swarm | Setup manager nodes
+- name: "swarm | Setup manager nodes"
   hosts: manager
   strategy: linear
   become: yes
@@ -7,28 +7,28 @@
     - bootstrap
     - docker-swarm
   tasks:
-    - name: swarm | Determine swarm status
+    - name: "swarm | Determine swarm status"
       shell: >
         docker info | egrep '^Swarm: ' | cut -d ' ' -f2
       register: swarm_status
 
-    - name: swarm | Create group of manager nodes already in swarm
+    - name: "swarm | Create group of manager nodes already in swarm"
       add_host:
         hostname: "{{ item }}"
         groups: swarm_manager_operational
       with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
-      when: "'active' in hostvars[item].swarm_status.stdout_lines"
+      when: "'active' in swarm_status.stdout_lines"
       run_once: true
 
-    - name: swarm | Create group of manager nodes to join to swarm
+    - name: "swarm | Create group of manager nodes to join to swarm"
       add_host:
         hostname: "{{ item }}"
         groups: swarm_manager_bootstrap
       with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
-      when: "'active' not in hostvars[item].swarm_status.stdout_lines"
+      when: "'active' not in swarm_status.stdout_lines"
       run_once: true
 
-- name: swarm | Setup worker nodes
+- name: "swarm | Setup worker nodes"
   hosts: worker
   strategy: linear
   become: yes
@@ -36,28 +36,28 @@
     - bootstrap
     - docker-swarm
   tasks:
-    - name: swarm | Determine swarm status
+    - name: "swarm | Determine swarm status"
       shell: >
         docker info | egrep '^Swarm: ' | cut -d ' ' -f2
       register: swarm_status
 
-    - name: swarm | Create group of worker nodes already in swarm
+    - name: "swarm | Create group of worker nodes already in swarm"
       add_host:
         hostname: "{{ item }}"
         groups: swarm_worker_operational
       with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
-      when: "'active' in hostvars[item].swarm_status.stdout_lines"
+      when: "'active' in swarm_status.stdout_lines"
       run_once: true
 
-    - name: swarm | Create group of worker nodes to join to swarm
+    - name: "swarm | Create group of worker nodes to join to swarm"
       add_host:
         hostname: "{{ item }}"
         groups: swarm_worker_bootstrap
       with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
-      when: "'active' not in hostvars[item].swarm_status.stdout_lines"
+      when: "'active' not in swarm_status.stdout_lines"
       run_once: true
 
-- name: swarm | Initialize swarm and manager node
+- name: "swarm | Initialize swarm and manager node"
   hosts: swarm_manager_bootstrap[0]
   strategy: linear
   become: yes
@@ -65,20 +65,20 @@
     - bootstrap
     - docker-swarm
   tasks:
-    - name: swarm | Initialize swarm
+    - name: "swarm | Initialize swarm"
       shell: >
         docker swarm init
       when: "'swarm_manager_operational' not in groups"
       register: bootstrap_first_node
 
-    - name: swarm | Add initialized host to group of manager nodes already in swarm
+    - name: "swarm | Add initialized host to group of manager nodes already in swarm"
       add_host:
         hostname: "{{ item }}"
         groups: swarm_manager_operational
       with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
       when: bootstrap_first_node | changed
 
-- name: swarm | setup swarm join tokens
+- name: "swarm | setup swarm join tokens"
   hosts: swarm_manager_operational[0]
   strategy: linear
   become: yes
@@ -89,21 +89,21 @@
   vars:
     iface: "{{ ansible_default_ipv4.interface }}"
   tasks:
-    - name: swarm | Retrieve swarm manager token
+    - name: "swarm | Retrieve swarm manager token"
       shell: docker swarm join-token -q manager
       register: swarm_manager_token
 
-    - name: swarm | Retrieve swarm worker token
+    - name: "swarm | Retrieve swarm worker token"
       shell: docker swarm join-token -q worker
       register: swarm_worker_token
 
-    - name: swarm | Populate list of manager IPs
+    - name: "swarm | Populate list of manager IPs"
       add_host:
         hostname: "{{ hostvars[item]['ansible_' + iface]['ipv4']['address'] }}"
         groups: swarm_manager_ips
       with_items: "{{ ansible_play_hosts | default(play_hosts) }}"
 
-- name: swarm | join additional manager nodes to swarm
+- name: "swarm | join additional manager nodes to swarm"
   hosts: swarm_manager_bootstrap:!swarm_manager_operational
   become: yes
   tags:
@@ -118,7 +118,7 @@
         --token={{ token }}
         {{ groups['swarm_manager_ips'][0] }}:2377
 
-- name: swarm | join worker nodes to swarm
+- name: "swarm | join worker nodes to swarm"
   hosts: swarm_worker_bootstrap
   become: yes
   tags:
@@ -127,27 +127,27 @@
   vars:
     token: "{{ hostvars[groups['swarm_manager_operational'][0]]['swarm_worker_token']['stdout'] }}"
   tasks:
-    - name: swarm | Join worker nodes to swarm
+    - name: "swarm | Join worker nodes to swarm"
       shell: >
         docker swarm join
         --token={{ token }}
         {{ groups['swarm_manager_ips'][0] }}:2377
 
-        - name: swarm | join additional manager nodes to swarm
+        - name: "swarm | join additional manager nodes to swarm"
           hosts: swarm_manager_bootstrap:!swarm_manager_operational
 
-- name: swarm | Configure nvidia
+- name: "swarm | Configure nvidia"
   hosts: all
   become: yes
   tags:
     - bootstrap
     - docker-swarm
   tasks:
-    - name: swarm | Gather gpu information
+    - name: "swarm | Gather gpu information"
       command: nvidia-smi -q
       register: nvidia_smi
 
-    - name: swarm | Configure nvidia-docker
+    - name: "swarm | Configure nvidia-docker"
       copy:
         content: |+
           [Unit]
@@ -188,7 +188,7 @@
       become: yes
       notify: Restart docker service
 
-    - name: swarm | Configure nvidia
+    - name: "swarm | Configure nvidia"
       lineinfile:
         dest: /etc/nvidia-container-runtime/config.toml
         state: present
@@ -197,7 +197,7 @@
       become: yes
       notify: Restart docker service
   handlers:
-    - name: swarm | Restart docker service
+    - name: "swarm | Restart docker service"
       systemd:
         name: docker
         state: restarted
