@@ -12,14 +12,14 @@
         - "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
         - "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
   tasks:
-    - name: nvidia-docker | Configure apt key
+    - name: "nvidia-docker | Configure apt key"
       apt_key:
         url: https://nvidia.github.io/nvidia-docker/gpgkey
         id: C95B321B61E88C1809C4F759DDCAE044F796ECB0
         state: "{{ nvidia_docker_packages_state }}"
       become: yes
 
-    - name: nvidia-docker | Configure apt repositories
+    - name: "nvidia-docker | Configure apt repositories"
       apt_repository:
         repo: "{{ item }}"
         update_cache: yes
@@ -27,10 +27,37 @@
       with_items: "{{ nvidia_docker_repositories }}"
       become: yes
 
-    - name: nvidia-docker | Configure nvidia-docker
+    - name: "nvidia-docker | Configure nvidia-docker"
       apt:
         name: "{{ item.name }}"
         state: "{{ item.state | default(nvidia_docker_packages_state) }}"
         autoremove: yes
       with_items: "{{ nvidia_docker_packages }}"
+      become: yes
+      notifiy: Restart docker
+  handlers:
+    - name: "docker | Stop docker service"
+      systemd:
+        name: docker
+        state: stopped
+        daemon_reload: no
+      listen: Restart docker
+      become: yes
+
+    - name: "docker | Restart docker socket service"
+      systemd:
+        name: docker-tcp.socket
+        state: restarted
+        enabled: yes
+        daemon_reload: yes
+      listen: Restart docker
+      become: yes
+
+    - name: "docker | Restart docker service"
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+        daemon_reload: yes
+      listen: Restart docker
       become: yes
