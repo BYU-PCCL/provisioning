@@ -63,14 +63,14 @@
           WantedBy=sockets.target
         dest: /etc/systemd/system/docker-tcp.socket
       become: yes
-      notify: Restart docker socket
+      notify: Restart docker
   handlers:
     - name: "docker | Stop docker service"
       systemd:
         name: docker
         state: stopped
         daemon_reload: no
-      listen: Restart docker socket
+      listen: Restart docker
       become: yes
 
     - name: "docker | Restart docker socket service"
@@ -79,7 +79,7 @@
         state: restarted
         enabled: yes
         daemon_reload: yes
-      listen: Restart docker socket
+      listen: Restart docker
       become: yes
 
     - name: "docker | Restart docker service"
@@ -88,5 +88,5 @@
         state: started
         enabled: yes
         daemon_reload: yes
-      listen: Restart docker socket
+      listen: Restart docker
       become: yes
