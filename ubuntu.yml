@@ -1,0 +1,18 @@
+- name: ubuntu
+  hosts: all
+  tags:
+    - bootstrap
+    - ubuntu
+  vars:
+    - ubuntu_packages:
+        - name: python-apt
+        - name: build-essential
+    - ubuntu_packages_state: present
+  tasks:
+    - name: "ubuntu | Configure"
+      apt:
+        name: "{{ item.name }}"
+        state: "{{ item.state | default(ubuntu_packages_state) }}"
+        autoremove: yes
+      with_items: "{{ ubuntu_packages }}"
+      become: yes
