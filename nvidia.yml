@@ -11,7 +11,7 @@
         - name: nvidia-cuda-dev
         # - name: nvidia-390 or nvidia-384 (automatically installed as a dependency)
   tasks:
-    - name: nvidia | Blacklist nouveau kernel module
+    - name: "nvidia | Blacklist nouveau kernel module"
       kernel_blacklist:
         name: nouveau
         blacklist_file: /etc/modprobe.d/blacklist-nouveau.conf
@@ -19,14 +19,14 @@
       become: yes
       notify: Reboot host
 
-    - name: nvidia | Configure ppa:graphics-drivers apt repository
+    - name: "nvidia | Configure ppa:graphics-drivers apt repository"
       apt_repository:
         repo: ppa:graphics-drivers
         update_cache: yes
         state: "{{ nvidia_packages_state }}"
       become: yes
 
-    - name: nvidia | Configure nvidia and cuda
+    - name: "nvidia | Configure nvidia and cuda"
       apt:
         name: "{{ item.name }}"
         state: "{{ nvidia_packages_state }}"
@@ -37,7 +37,7 @@
       notify: Reboot host
 
     # TODO: check existing cuddn version
-    - name: nvidia | Configure cudnn
+    - name: "nvidia | Configure cudnn"
       unarchive:
         src: "{{ cudnn_url }}"
         remote_src: yes
@@ -55,7 +55,7 @@
           creates: libcudnn.so
       become: yes
   handlers:
-    - name: nvidia | Reboot host
+    - name: "nvidia | Reboot host"
       command: shutdown -r now "Reboot triggered by Ansible"
       async: 0
       poll: 0
@@ -63,7 +63,7 @@
       listen: Reboot host
       become: yes
 
-    - name: nvidia | Wait for host to reboot
+    - name: "nvidia | Wait for host to reboot"
       wait_for_connection:
         delay: 3
       listen: Reboot host
