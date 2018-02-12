@@ -7,41 +7,51 @@
   vars:
     - packages_state: present
     - packages:
-        - name: python-dev
-          state: "{{ packages_state }}"
-        - name: python-pip
-          state: "{{ packages_state }}"
-        - name: python3-dev
-          state: "{{ packages_state }}"
-        - name: python3-pip
-          state: "{{ packages_state }}"
-    - pip2_packages:
-        - name: numpy
-        - name: tqdm
-        - name: tensorflow-gpu
-        - name: tensorflow-tensorboard
-    - pip3_packages: "{{ pip2_packages + [{'name': 'git+https://github.com/BYU-PCCL/hyperdrive.git'}], 'state': 'latest' }}"
+        - python-dev
+        - python-pip
+        - python3-dev
+        - python3-pip
+    - pip3_packages:
+        - jupyter
+        - matplotlib
+        - numpy
+        - pandas
+        - pillow
+        - pygame
+        - scikit-image
+        - scipy
+        - sklearn
+        - tensorflow-gpu
+        - tensorflow-tensorboard
+        # TODO: figure out cuda version automatically
+        # - http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp27-cp27mu-linux_x86_64.whl
+        - http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl
+        - torchvision
+        - tqdm
+        - hyperdrive
+    # - pip3_packages: "{{ pip2_packages }}"
+    # - pip3_packages: "{{ pip2_packages + [{'name': 'git+https://github.com/BYU-PCCL/hyperdrive.git'}], 'state': 'latest' }}"
   tasks:
     - name: python | Configure
       apt:
-        name: "{{ item.name }}"
-        state: "{{ item.state }}"
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(packages_state) }}"
         autoremove: yes
       with_items: "{{ packages }}"
       become: yes
 
     - name: python | Configure pip2
       pip:
-        name: "{{ item.name }}"
-        state: "{{ item.state | default('present') }}"
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(packages_state) }}"
         executable: pip2
       with_items: "{{ pip2_packages }}"
       become: yes
 
     - name: python | Configure pip3
       pip:
-        name: "{{ item.name }}"
-        state: "{{ item.state | default('present') }}"
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(packages_state) }}"
         executable: pip3
       with_items: "{{ pip3_packages }}"
       become: yes

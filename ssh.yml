@@ -1,13 +1,12 @@
 - name: ssh
   hosts: all
-  gather_facts: no
   tags:
     - bootstrap
     - ssh
   vars:
     - ssh_key_file: .ssh/id_rsa
     - remote_sudoers:
-        - user: remote
+        - user: "{{ ansible_user | default('remote') }}"
           # python3 -c 'import crypt; print(crypt.crypt("the password"))'
           password: foEY7SALC7m46
   tasks:

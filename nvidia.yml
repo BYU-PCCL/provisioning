@@ -5,10 +5,14 @@
     - bootstrap
     - nvidia
   vars:
-    - cudnn_url: http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/cudnn-8.0-linux-x64-v6.0.tgz
+    # TOOD: find a better place to put this
+    - cudnn_deb_url: /mnt/pccfs/not_backed_up/downloads/libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
+    - cuda_repo_url: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
     - nvidia_packages_state: present
     - nvidia_packages:
-        - name: nvidia-cuda-dev
+        # necessary for tensorflow v1.5
+        - name: cuda-9-0
+        # - name: nvidia-cuda-dev
         # - name: nvidia-390 or nvidia-384 (automatically installed as a dependency)
   tasks:
     - name: "nvidia | Blacklist nouveau kernel module"
@@ -22,7 +26,12 @@
     - name: "nvidia | Configure ppa:graphics-drivers apt repository"
       apt_repository:
         repo: ppa:graphics-drivers
-        update_cache: yes
+        state: "{{ nvidia_packages_state }}"
+      become: yes
+
+    - name: "nvidia | Configure cuda repository"
+      apt:
+        deb: "{{ cuda_repo_url }}"
         state: "{{ nvidia_packages_state }}"
       become: yes
 
@@ -32,28 +41,21 @@
         state: "{{ nvidia_packages_state }}"
         autoremove: yes
         install_recommends: yes
+        update_cache: yes
       with_items: "{{ nvidia_packages }}"
       become: yes
       notify: Reboot host
 
-    # TODO: check existing cuddn version
     - name: "nvidia | Configure cudnn"
-      unarchive:
-        src: "{{ cudnn_url }}"
-        remote_src: yes
-        dest: "{{ item.dest }}"
-        mode: u+r
-        creates: "{{ item.dest }}/{{ item.creates }}"
-        exclude: "{{ item.exclude }}"
-        extra_opts: --strip-components=2
-      with_items:
-        - exclude: cuda/lib64
-          dest: /usr/include
-          creates: cudnn.h
-        - exclude: cuda/include
-          dest: /usr/lib/x86_64-linux-gnu
-          creates: libcudnn.so
+      apt:
+        deb: "{{ cudnn_deb_url }}"
+        state: "{{ nvidia_packages_state }}"
+        autoremove: yes
+        install_recommends: yes
+        # update_cache: yes
+      # with_items: "{{ nvidia_packages }}"
       become: yes
+
   handlers:
     - name: "nvidia | Reboot host"
       command: shutdown -r now "Reboot triggered by Ansible"

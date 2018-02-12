@@ -5,15 +5,44 @@
     - ubuntu
   vars:
     - ubuntu_packages:
-        - name: python-apt
-        - name: build-essential
-        - name: git
+        - build-essential
+        - exfat-fuse
+        - exfat-utils
+        - git
+        - nfs-common
+        - openssl
+        - python-apt
+        - wget
     - ubuntu_packages_state: present
   tasks:
-    - name: "ubuntu | Configure"
+    - name: "ubuntu | Configure packages"
       apt:
-        name: "{{ item.name }}"
+        name: "{{ item.name | default(item) }}"
         state: "{{ item.state | default(ubuntu_packages_state) }}"
         autoremove: yes
       with_items: "{{ ubuntu_packages }}"
+      become: yes
+
+    - name: "ubuntu | FIX MOUNT pccfs"
+      mount:
+        path: /mnt/pccfs/
+        src: pccfs:/mnt/mainpccfs/mainpccfs_ds1
+        fstype: nfs
+        opts: auto
+        state: absent
+      become: yes
+
+    - name: "ubuntu | Mount pccfs"
+      mount:
+        path: /mnt/pccfs/
+        src: pccfs:/mnt/mainpccfs/mainpccfs_ds1
+        fstype: nfs
+        state: mounted
+      become: yes
+
+    - name: "ubuntu | Disable annoying networking message"
+      lineinfile:
+        path: /etc/default/avahi-daemon
+        line: AVAHI_DAEMON_DETECT_LOCAL=0
+        regexp: AVAHI_DAEMON_DETECT_LOCAL
       become: yes

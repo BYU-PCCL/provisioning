@@ -34,7 +34,7 @@
         autoremove: yes
       with_items: "{{ nvidia_docker_packages }}"
       become: yes
-      notifiy: Restart docker
+      notify: Restart docker
   handlers:
     - name: "docker | Stop docker service"
       systemd:
