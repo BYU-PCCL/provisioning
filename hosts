@@ -1,14 +1,14 @@
 [manager]
 doctor ansible_host=doctor.cs.byu.edu
-ghost ansible_host=ghost.cs.byu.edu
-habanero ansible_host=habanero.cs.byu.edu ansible_user=wm
+hatch ansible_host=hatch.cs.byu.edu
+monster ansible_host=monster.cs.byu.edu
 
 [worker]
 aji ansible_host=aji.cs.byu.edu
-hatch ansible_host=hatch.cs.byu.edu
+ghost ansible_host=ghost.cs.byu.edu
+habanero ansible_host=habanero.cs.byu.edu ansible_user=wm
 ; infinity ansible_host=infinity.cs.byu.edu
-monster ansible_host=monster.cs.byu.edu
-morita ansible_host=morita.cs.byu.edu
+; morita ansible_host=morita.cs.byu.ed
 ; naga ansible_host=naga.cs.byu.edu
 ; potts ansible_host=jalapeno.cs.byu.edu
 reaper ansible_host=reaper.cs.byu.edu
