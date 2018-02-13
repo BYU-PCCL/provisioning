@@ -13,6 +13,7 @@ habanero ansible_host=habanero.cs.byu.edu ansible_user=wm
 ; potts ansible_host=jalapeno.cs.byu.edu
 reaper ansible_host=reaper.cs.byu.edu
 ; santaka ansible_host=santaka.cs.byu.edu
+serrano ansible_host=serrano.cs.byu.edu
 
 [all:vars]
 ansible_user=remote
