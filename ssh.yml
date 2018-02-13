@@ -6,7 +6,7 @@
   vars:
     - ssh_key_file: .ssh/id_rsa
     - remote_sudoers:
-        - user: "{{ ansible_user | default('remote') }}"
+        - user: remote
           # python3 -c 'import crypt; print(crypt.crypt("the password"))'
           password: foEY7SALC7m46
   tasks:
