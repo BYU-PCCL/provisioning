@@ -6,7 +6,7 @@ monster ansible_host=monster.cs.byu.edu
 [worker]
 aji ansible_host=aji.cs.byu.edu
 ghost ansible_host=ghost.cs.byu.edu
-habanero ansible_host=habanero.cs.byu.edu ansible_user=wm
+habanero ansible_host=habanero.cs.byu.edu
 ; infinity ansible_host=infinity.cs.byu.edu
 ; morita ansible_host=morita.cs.byu.ed
 ; naga ansible_host=naga.cs.byu.edu
