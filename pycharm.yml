@@ -5,7 +5,7 @@
   vars:
     - pycharm_version: 9
     - pycharm_packages:
-        - pycharm
+        - pycharm-professional
     - pycharm_packages_state: present
   tasks:
     - include_tasks: apt.yml apt_packages_state="{{ pycharm_packages_state }}"
