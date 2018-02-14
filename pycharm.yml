@@ -1,0 +1,30 @@
+- name: pycharm
+  hosts: all
+  tags:
+    - pycharm
+  vars:
+    - pycharm_version: 9
+    - pycharm_packages:
+        - pycharm
+    - pycharm_packages_state: present
+  tasks:
+    - include_tasks: apt.yml apt_packages_state="{{ pycharm_packages_state }}"
+
+    - name: "pycharm | Add repository"
+      apt_repository:
+        repo: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(pycharm_packages_state) }}"
+        update_cache: yes
+      with_items:
+        - name: ppa:mystic-mirage/pycharm
+          state: absent
+        - name: ppa:viktor-krivak/pycharm
+          state: "{{ pycharm_packages_state }}"
+      become: yes
+
+    - name: "pycharm | Configure packages"
+      apt:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(pycharm_packages_state) }}"
+      with_items: "{{ pycharm_packages }}"
+      become: yes
