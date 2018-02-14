@@ -1,0 +1,35 @@
+- name: nodejs
+  hosts: all
+  tags:
+    - nodejs
+  vars:
+    - nodejs_version: 9
+    - nodejs_packages:
+        - nodejs
+    - nodejs_packages_state: present
+  tasks:
+    - include_tasks: apt.yml apt_packages_state="{{ nodejs_packages_state }}"
+
+    - name: "nodejs | Add NodeSource apt key"
+      apt_key:
+        url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280
+        id: 68576280
+        state: "{{ nodejs_packages_state }}"
+
+    - name: "nodejs | Add NodeSource repositories"
+      apt_repository:
+        repo: "{{ item }}"
+        state: "{{ nodejs_packages_state }}"
+        update_cache: yes
+      become: yes
+      with_items:
+        - "deb https://deb.nodesource.com/node_{{ nodejs_version }}.x {{ ansible_distribution_release }} main"
+        - "deb-src https://deb.nodesource.com/node_{{ nodejs_version }}.x {{ ansible_distribution_release }} main"
+
+    - name: "nodejs | Configure packages"
+      apt:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(nodejs_packages_state) }}"
+        autoremove: yes
+      with_items: "{{ nodejs_packages }}"
+      become: yes
