@@ -35,6 +35,8 @@
         - torchvision
         - tqdm
   tasks:
+    - include_tasks: apt.yml apt_packages_state="{{ python_packages_state }}"
+
     - name: "python | Configure"
       apt:
         name: "{{ item.name | default(item) }}"
