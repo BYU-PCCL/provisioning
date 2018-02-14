@@ -12,10 +12,11 @@
         - git
         - nfs-common
         - openssl
-        - python-apt
         - wget
     - ubuntu_packages_state: present
   tasks:
+    - include_tasks: apt.yml apt_packages_state="{{ ubuntu_packages_state }}"
+
     - name: "ubuntu | Configure packages"
       apt:
         name: "{{ item.name | default(item) }}"
