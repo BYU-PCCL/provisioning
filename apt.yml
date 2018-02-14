@@ -1,0 +1,7 @@
+- name: "apt | Configure package dependencies"
+  apt:
+    name: "{{ item.name | default(item) }}"
+    state: "{{ item.state | default(apt_packages_state) }}"
+  with_items:
+    - name: python3-apt
+    - name: python-apt
