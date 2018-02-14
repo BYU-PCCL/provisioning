@@ -1,0 +1,17 @@
+- name: slack
+  hosts: all
+  tags:
+    - slack
+  vars:
+    - slack_packages:
+        - deb: https://downloads.slack-edge.com/linux_releases/slack-desktop-3.0.5-amd64.deb
+    - slack_packages_state: present
+  tasks:
+    - include_tasks: apt.yml apt_packages_state="{{ slack_packages_state }}"
+
+    - name: "slack | Configure packages"
+      apt:
+        deb: "{{ item.deb | default(item) }}"
+        state: "{{ item.state | default(slack_packages_state) }}"
+      with_items: "{{ slack_packages }}"
+      become: yes
