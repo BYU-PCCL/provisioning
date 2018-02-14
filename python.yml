@@ -17,6 +17,7 @@
         - python3-setuptools
         - python3-virtualenv
         - python3-wheel
+        - libopencv-gpu-dev
     - pip3_packages:
         # TODO: figure out cuda version automatically
         - http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl
@@ -24,6 +25,7 @@
         - jupyter
         - matplotlib
         - numpy
+        - opencv-python
         - pandas
         - pillow
         - pygame
