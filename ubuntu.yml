@@ -6,6 +6,7 @@
   vars:
     - ubuntu_packages:
         - build-essential
+        - curl
         - exfat-fuse
         - exfat-utils
         - git
@@ -23,7 +24,7 @@
       with_items: "{{ ubuntu_packages }}"
       become: yes
 
-    - name: "ubuntu | FIX MOUNT pccfs"
+    - name: "ubuntu | Ensure incorrect mount pccfs is absent"
       mount:
         path: /mnt/pccfs/
         src: pccfs:/mnt/mainpccfs/mainpccfs_ds1
