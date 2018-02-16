@@ -1,0 +1,28 @@
+- name: glances
+  hosts: all
+  tags:
+    - glances
+  vars:
+    - glances_packages:
+        - python3-dev
+    - glances_pip3_packages:
+        - 'glances[action,cpuinfo,chart,docker,folders,gpu,ip]'
+    - glances_packages_state: present
+    - glances_pip3_packages_state: "{{ glances_packages_state }}"
+  tasks:
+    - name: "glances | Configure packages"
+      apt:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(glances_packages_state) }}"
+      with_items: "{{ glances_packages }}"
+      become: yes
+
+    - name: "glances | Configure pip3 packages"
+      pip:
+        name:
+          # HACK so that 'glances[extra,other-extra,...]' works
+          - "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(glances_pip3_packages_state) }}"
+        executable: pip3
+      with_items: "{{ glances_pip3_packages }}"
+      become: yes
