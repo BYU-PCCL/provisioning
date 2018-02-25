@@ -1,0 +1,48 @@
+- name: jupyter
+  hosts: all
+  tags:
+    - jupyter
+  vars:
+    - jupyter_pip3_packages:
+        - jupyter
+    - jupyter_pip3_packages_state: present
+    - jupyter_config_file_path: "{{ ansible_user_dir }}/.config/jupyter/jupyter_notebook_config.py"
+  tasks:
+    - name: "jupyter | Configure pip3"
+      pip:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(jupyter_pip3_packages_state) }}"
+        executable: pip3
+      with_items: "{{ jupyter_pip3_packages }}"
+      become: yes
+
+    - name: "jupyter | Configure jupyter systemd service"
+      copy:
+        content: |+
+          [Unit]
+          Description=Jupyter Notebook
+
+          [Service]
+          Type=simple
+          PIDFile=/run/jupyter.pid
+
+          ExecStart=/usr/local/bin/jupyter-notebook --config={{ jupyter_config_file_path }}
+          User={{ ansible_user_id }}
+          Group={{ ansible_user_id }}
+          Restart=always
+          RestartSec=5
+          KillMode=mixed
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /usr/lib/systemd/system/jupyter.service
+      become: yes
+      notify: Restart jupyter service
+  handlers:
+    - name: "jupyter | Restart jupyter service"
+      systemd:
+        name: jupyter
+        state: restarted
+        daemon_reload: yes
+      listen: Restart jupyter service
+      become: yes
