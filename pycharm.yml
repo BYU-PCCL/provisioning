@@ -3,7 +3,6 @@
   tags:
     - pycharm
   vars:
-    - pycharm_version: 9
     - pycharm_packages:
         - pycharm-professional
     - pycharm_packages_state: present
@@ -19,6 +18,8 @@
         - name: ppa:mystic-mirage/pycharm
           state: absent
         - name: ppa:viktor-krivak/pycharm
+          state: absent
+        - name: ppa:jonas-groeger/jetbrains
           state: "{{ pycharm_packages_state }}"
       become: yes
 
