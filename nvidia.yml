@@ -12,8 +12,6 @@
     - nvidia_packages:
         # necessary for tensorflow v1.5
         - name: cuda-9-0
-        # - name: nvidia-cuda-dev
-        # - name: nvidia-390 or nvidia-384 (automatically installed as a dependency)
   tasks:
     - name: "nvidia | Blacklist nouveau kernel module"
       kernel_blacklist:
