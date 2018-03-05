@@ -4,4 +4,5 @@
 - import_playbook: nvidia.yml
 - import_playbook: nvidia-docker.yml
 - import_playbook: python.yml
+- import_playbook: extras.yml  # TODO: make this optional
 - import_playbook: swarm.yml
