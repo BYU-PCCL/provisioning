@@ -1,0 +1,17 @@
+- name: chrome
+  hosts: all
+  tags:
+    - chrome
+  vars:
+    - chrome_packages:
+        - deb: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    - chrome_packages_state: present
+  tasks:
+    - include_tasks: apt.yml apt_packages_state="{{ chrome_packages_state }}"
+
+    - name: "chrome | Configure packages"
+      apt:
+        deb: "{{ item.deb | default(item) }}"
+        state: "{{ item.state | default(chrome_packages_state) }}"
+      with_items: "{{ chrome_packages }}"
+      become: yes

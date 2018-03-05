@@ -2,3 +2,4 @@
 - import_playbook: glances.yml
 - import_playbook: nodejs.yml
 - import_playbook: pycharm.yml
+- import_playbook: chrome.yml
