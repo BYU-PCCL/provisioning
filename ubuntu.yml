@@ -31,6 +31,7 @@
         name: vm.swappiness
         value: "{{ ubuntu_swappiness }}"
         state: present
+      become: yes
 
     - name: "ubuntu | Ensure incorrect mount pccfs is absent"
       mount:
