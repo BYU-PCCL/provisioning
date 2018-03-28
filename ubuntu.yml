@@ -5,6 +5,8 @@
     - ubuntu
   vars:
     - ubuntu_packages:
+        - name: ansible
+          state: present
         - name: build-essential
           state: present
         - name: curl
@@ -88,6 +90,15 @@
     - ubuntu_swappiness: 5
   tasks:
     - include_tasks: apt.yml apt_packages_state="{{ ubuntu_packages_state }}"
+
+    - name: "ubuntu | Add ansible repository"
+      apt_repository:
+        repo: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(ubuntu_packages_state) }}"
+        update_cache: yes
+      with_items:
+        - ppa:ansible/ansible
+      become: yes
 
     - name: "ubuntu | Configure packages"
       apt:
