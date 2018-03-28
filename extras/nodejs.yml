@@ -8,7 +8,7 @@
         - nodejs
     - nodejs_packages_state: present
   tasks:
-    - include_tasks: apt.yml apt_packages_state="{{ nodejs_packages_state }}"
+    - include_tasks: ../apt.yml apt_packages_state="{{ nodejs_packages_state }}"
 
     - name: "nodejs | Add NodeSource apt key"
       apt_key:

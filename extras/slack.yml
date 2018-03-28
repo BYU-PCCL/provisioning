@@ -7,7 +7,7 @@
         - deb: https://downloads.slack-edge.com/linux_releases/slack-desktop-3.1.0-amd64.deb
     - slack_packages_state: present
   tasks:
-    - include_tasks: apt.yml apt_packages_state="{{ slack_packages_state }}"
+    - include_tasks: ../apt.yml apt_packages_state="{{ slack_packages_state }}"
 
     - name: "slack | Configure packages"
       apt:
