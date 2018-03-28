@@ -6,7 +6,7 @@
     - nvidia
   vars:
     # TOOD: find a better place to put this
-    - cudnn_deb_url: /mnt/pccfs/not_backed_up/provisioning/resources/libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
+    - cudnn_deb_url: /mnt/pccfs/not_backed_up/provisioning/resources/libcudnn7_7.1.2.21-1+cuda9.1_amd64.deb
     - nvidia_packages_state: present
     - nvidia_packages:
         - name: nvidia-driver-390
