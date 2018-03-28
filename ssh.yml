@@ -7,8 +7,9 @@
     - ssh_key_file: .ssh/id_rsa
     - remote_sudoers:
         - user: remote
-          # python3 -c 'import crypt; print(crypt.crypt("the password"))'
-          password: foEY7SALC7m46
+          # http://docs.ansible.com/ansible/latest/reference_appendices/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module
+          password: $6$Bs1Xag.d9LQBKOl$mXq16bjxzDx.AgsXV7torN2dybAF8O/wwcQYGm9qRrvwmzgBuyBKQ7vgXmwxHMBuwXwZRBuF81v92JhN1rL8z.
+
   tasks:
     - name: ssh | Create 'sudo' group
       group:
@@ -30,7 +31,7 @@
         name: "{{ item.user }}"
         state: present
         password: "{{ item.password }}"
-        update_password: on_create
+        update_password: always
         generate_ssh_key: no
         groups: sudo
         append: yes
