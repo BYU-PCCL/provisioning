@@ -5,14 +5,22 @@
     - ubuntu
   vars:
     - ubuntu_packages:
-        - build-essential
-        - curl
-        - exfat-fuse
-        - exfat-utils
-        - git
-        - nfs-common
-        - openssl
-        - wget
+        - name: build-essential
+          state: present
+        - name: curl
+          state: present
+        - name: exfat-fuse
+          state: present
+        - name: exfat-utils
+          state: present
+        - name: git
+          state: present
+        - name: nfs-common
+          state: present
+        - name: openssl
+          state: present
+        - name: wget
+          state: present
         # - name: account-*
         #   state: absent
         - name: aisleriot
