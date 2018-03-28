@@ -1,4 +1,4 @@
-- name: ubuntu 
+- name: ubuntu
   hosts: all
   tags:
     - bootstrap
@@ -33,20 +33,12 @@
         state: present
       become: yes
 
-    - name: "ubuntu | Ensure incorrect mount pccfs is absent"
+    - name: "ubuntu | Mount pccfs"
       mount:
-        path: /mnt/pccfs/
+        path: /mnt/pccfs
         src: pccfs:/mnt/mainpccfs/mainpccfs_ds1
         fstype: nfs
         opts: auto
-        state: absent
-      become: yes
-
-    - name: "ubuntu | Mount pccfs"
-      mount:
-        path: /mnt/pccfs/
-        src: pccfs:/mnt/mainpccfs/mainpccfs_ds1
-        fstype: nfs
         state: mounted
       become: yes
 
