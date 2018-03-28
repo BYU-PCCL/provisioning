@@ -29,8 +29,8 @@
           state: absent
         - name: brltty
           state: absent
-        - name: colord
-          state: absent
+        # - name: colord
+        #   state: absent
         - name: deja-dup*
           state: absent
         - name: duplicity
