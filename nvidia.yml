@@ -35,8 +35,6 @@
         state: "{{ nvidia_packages_state }}"
         autoremove: yes
         install_recommends: yes
-        # update_cache: yes
-      # with_items: "{{ nvidia_packages }}"
       become: yes
 
   handlers:
