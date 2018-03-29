@@ -1,0 +1,69 @@
+- name: nvidia
+  hosts: all
+  gather_facts: no
+  tags:
+    - bootstrap
+    - nvidia
+  vars:
+    # TOOD: find a better place to put this
+    - cudnn_deb_url: /mnt/pccfs/not_backed_up/provisioning/resources/libcudnn7_7.0.5.15-1+cuda9.0_amd64.deb
+    - cuda_repo_key_url: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/7fa2af80.pub
+    - cuda_repo_url: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
+    - nvidia_packages_state: present
+    - nvidia_packages:
+        # necessary for tensorflow>=v1.5
+        - name: cuda-9-0
+  tasks:
+    - name: "nvidia | Configure ppa:graphics-drivers apt repository"
+      apt_repository:
+        repo: ppa:graphics-drivers
+        state: "{{ nvidia_packages_state }}"
+      become: yes
+
+    - name: "nvidia | Add cuda repository key"
+      apt_key:
+        url: "{{ cuda_repo_key_url }}"
+        state: "{{ nvidia_packages_state }}"
+      become: yes
+
+    - name: "nvidia | Configure cuda repository"
+      apt:
+        deb: "{{ cuda_repo_url }}"
+        state: "{{ nvidia_packages_state }}"
+      become: yes
+
+    - name: "nvidia | Configure nvidia and cuda"
+      apt:
+        name: "{{ item.name }}"
+        state: "{{ nvidia_packages_state }}"
+        autoremove: yes
+        install_recommends: yes
+        update_cache: yes
+      with_items: "{{ nvidia_packages }}"
+      become: yes
+      # notify: Reboot host
+
+    - name: "nvidia | Configure cudnn"
+      apt:
+        deb: "{{ cudnn_deb_url }}"
+        state: "{{ nvidia_packages_state }}"
+        autoremove: yes
+        install_recommends: yes
+        # update_cache: yes
+      # with_items: "{{ nvidia_packages }}"
+      become: yes
+
+  handlers:
+    - name: "nvidia | Reboot host"
+      command: shutdown -r now "Reboot triggered by Ansible"
+      async: 0
+      poll: 0
+      ignore_errors: yes
+      listen: Reboot host
+      become: yes
+
+    - name: "nvidia | Wait for host to reboot"
+      wait_for_connection:
+        delay: 3
+      listen: Reboot host
+      become: no
