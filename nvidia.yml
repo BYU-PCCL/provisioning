@@ -21,7 +21,7 @@
     - name: "nvidia | Configure nvidia driver and cuda"
       apt:
         name: "{{ item.name }}"
-        state: "{{ nvidia_packages_state }}"
+        state: "{{ item.state | default(nvidia_packages_state) }}"
         autoremove: yes
         install_recommends: yes
         update_cache: yes
