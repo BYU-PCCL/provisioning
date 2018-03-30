@@ -1,3 +1,5 @@
+- import_playbook: nvidia-docker.yml
+
 # taken from: https://github.com/nextrevision/ansible-swarm-playbook
 - name: "swarm | Setup manager nodes"
   hosts: manager
@@ -135,72 +137,3 @@
 
         - name: "swarm | join additional manager nodes to swarm"
           hosts: swarm_manager_bootstrap:!swarm_manager_operational
-
-- name: "swarm | Configure nvidia"
-  hosts: all
-  become: yes
-  tags:
-    - bootstrap
-    - docker-swarm
-  tasks:
-    - name: "swarm | Gather gpu information"
-      command: nvidia-smi -q
-      register: nvidia_smi
-
-    - name: "swarm | Configure nvidia-docker"
-      copy:
-        content: |+
-          [Unit]
-          Description=Docker Application Container Engine
-          Documentation=https://docs.docker.com
-          After=network-online.target docker.socket firewalld.service
-          Wants=network-online.target
-          Requires=docker.socket
-
-          [Service]
-          Type=notify
-          # the default is not to use systemd for cgroups because the delegate issues still
-          # exists and systemd currently does not support the cgroup feature set required
-          # for containers run by docker
-          ExecStart=/usr/bin/dockerd -H fd:// --default-runtime=nvidia {{ nvidia_smi.stdout | regex_findall('UUID\s+:\s+(GPU-\w+)-.*') | map('regex_replace', '^(.*)$', '--node-generic-resource gpu=\1') | list | join(' ') }}
-          ExecReload=/bin/kill -s HUP $MAINPID
-          LimitNOFILE=1048576
-          # Having non-zero Limits causes performance problems due to accounting overhead
-          # in the kernel. We recommend using cgroups to do container-local accounting.
-          LimitNPROC=infinity
-          LimitCORE=infinity
-          # Uncomment TasksMax if your systemd version supports it.
-          # Only systemd 226 and above support this version.
-          TasksMax=infinity
-          TimeoutStartSec=0
-          # set delegate yes so that systemd does not reset the cgroups of docker containers
-          Delegate=yes
-          # kill only the docker process, not all processes in the cgroup
-          KillMode=process
-          # restart the docker process if it exits prematurely
-          Restart=on-failure
-          StartLimitBurst=3
-          StartLimitInterval=60s
-
-          [Install]
-          WantedBy=multi-user.target
-        dest: /etc/systemd/system/docker.service
-      become: yes
-      notify: Restart docker service
-
-    - name: "swarm | Configure nvidia"
-      lineinfile:
-        dest: /etc/nvidia-container-runtime/config.toml
-        state: present
-        regexp: '^#?\s*swarm-resource'
-        line: 'swarm-resource = "DOCKER_RESOURCE_GPU"'
-      become: yes
-      notify: Restart docker service
-  handlers:
-    - name: "swarm | Restart docker service"
-      systemd:
-        name: docker
-        state: restarted
-        daemon_reload: yes
-      listen: Restart docker service
-      become: yes

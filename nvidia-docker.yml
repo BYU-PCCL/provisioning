@@ -1,5 +1,6 @@
 - name: nvidia-docker
   hosts: all
+  gather_facts: yes
   tags:
     - bootstrap
     - nvidia-docker
@@ -8,9 +9,12 @@
         - name: nvidia-docker2
     - nvidia_docker_packages_state: present
     - nvidia_docker_repositories:
-        - "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
-        - "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
-        - "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+        - repo: "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+          filename: libnvidia-container
+        - repo: "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+          filename: nvidia-container-runtime
+        - repo: "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+          filename: nvidia-docker
   tasks:
     - name: "nvidia-docker | Configure apt key"
       apt_key:
@@ -21,7 +25,8 @@
 
     - name: "nvidia-docker | Configure apt repositories"
       apt_repository:
-        repo: "{{ item.repo | default(item) }}"
+        repo: "{{ item.repo | default(item) }}"\
+        # TODO: add default with regex...
         filename: "{{ item.filename }}"
         update_cache: yes
         state: "{{ nvidia_docker_packages_state }}"
@@ -34,6 +39,60 @@
         state: "{{ item.state | default(nvidia_docker_packages_state) }}"
         autoremove: yes
       with_items: "{{ nvidia_docker_packages }}"
+      become: yes
+      notify: Restart docker
+
+    - name: "nvidia-docker | Gather gpu information"
+      command: nvidia-smi -q
+      register: nvidia_smi
+
+    - name: "nvidia-docker | Configure nvidia-docker"
+      copy:
+        content: |+
+          [Unit]
+          Description=Docker Application Container Engine
+          Documentation=https://docs.docker.com
+          After=network-online.target docker.socket firewalld.service
+          Wants=network-online.target
+          Requires=docker.socket
+
+          [Service]
+          Type=notify
+          # the default is not to use systemd for cgroups because the delegate issues still
+          # exists and systemd currently does not support the cgroup feature set required
+          # for containers run by docker
+          ExecStart=/usr/bin/dockerd -H fd:// --default-runtime=nvidia {{ nvidia_smi.stdout | regex_findall('UUID\s+:\s+(GPU-\w+)-.*') | map('regex_replace', '^(.*)$', '--node-generic-resource gpu=\1') | list | join(' ') }}
+          ExecReload=/bin/kill -s HUP $MAINPID
+          LimitNOFILE=1048576
+          # Having non-zero Limits causes performance problems due to accounting overhead
+          # in the kernel. We recommend using cgroups to do container-local accounting.
+          LimitNPROC=infinity
+          LimitCORE=infinity
+          # Uncomment TasksMax if your systemd version supports it.
+          # Only systemd 226 and above support this version.
+          TasksMax=infinity
+          TimeoutStartSec=0
+          # set delegate yes so that systemd does not reset the cgroups of docker containers
+          Delegate=yes
+          # kill only the docker process, not all processes in the cgroup
+          KillMode=process
+          # restart the docker process if it exits prematurely
+          Restart=on-failure
+          StartLimitBurst=3
+          StartLimitInterval=60s
+
+          [Install]
+          WantedBy=multi-user.target
+        dest: /etc/systemd/system/docker.service
+      become: yes
+      notify: Restart docker
+
+    - name: "nvidia-docker | Configure nvidia container runtime"
+      lineinfile:
+        dest: /etc/nvidia-container-runtime/config.toml
+        state: present
+        regexp: '^#?\s*swarm-resource'
+        line: 'swarm-resource = "DOCKER_RESOURCE_GPU"'
       become: yes
       notify: Restart docker
   handlers:
