@@ -11,7 +11,7 @@
     - cuda_repo_url: http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_9.0.176-1_amd64.deb
     - nvidia_packages_state: present
     - nvidia_packages:
-        # necessary for tensorflow>=v1.5
+        - name: nvidia-390
         - name: cuda-9-0
   tasks:
     - name: "nvidia | Configure ppa:graphics-drivers apt repository"
@@ -34,8 +34,8 @@
 
     - name: "nvidia | Configure nvidia and cuda"
       apt:
-        name: "{{ item.name }}"
-        state: "{{ nvidia_packages_state }}"
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(nvidia_packages_state) }}"
         autoremove: yes
         install_recommends: yes
         update_cache: yes
