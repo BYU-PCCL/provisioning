@@ -1,6 +1,6 @@
 - name: nvidia
   hosts: all
-  gather_facts: no
+  gather_facts: yes
   tags:
     - bootstrap
     - nvidia
@@ -14,13 +14,20 @@
   tasks:
     - name: "nvidia | Configure ppa:graphics-drivers apt repository"
       apt_repository:
-        repo: ppa:graphics-drivers
+        repo: ppa:graphics-drivers/ppa
+        filename: "graphics-drivers-ubuntu-ppa-{{ ansible_distribution_release }}"
         state: "{{ nvidia_packages_state }}"
       become: yes
 
+    # - name: "nvidia | Remove unecessary cuda repository key"
+    #   apt_key:
+    #     id: F796ECB0
+    #     state: absent
+    #   become: yes
+
     - name: "nvidia | Configure nvidia driver and cuda"
       apt:
-        name: "{{ item.name }}"
+        name: "{{ item.name | default(item) }}"
         state: "{{ item.state | default(nvidia_packages_state) }}"
         autoremove: yes
         install_recommends: yes
