@@ -21,7 +21,8 @@
 
     - name: "nvidia-docker | Configure apt repositories"
       apt_repository:
-        repo: "{{ item }}"
+        repo: "{{ item.repo | default(item) }}"
+        filename: "{{ item.filename }}"
         update_cache: yes
         state: "{{ nvidia_docker_packages_state }}"
       with_items: "{{ nvidia_docker_repositories }}"
