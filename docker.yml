@@ -36,13 +36,14 @@
     - name: "docker | Configure repository"
       apt_repository:
         repo: "{{ docker_apt_repository }}"
+        filename: docker
         state: present
         update_cache: yes
       become: yes
 
     - name: "docker | Configure"
       apt:
-        name: "{{ item.name }}"
+        name: "{{ item.name | default(item) }}"
         state: "{{ item.state | default(docker_packages_state) }}"
         autoremove: yes
       with_items: "{{ docker_packages }}"
@@ -85,7 +86,7 @@
     - name: "docker | Restart docker service"
       systemd:
         name: docker
-        state: started
+        state: restarted
         enabled: yes
         daemon_reload: yes
       listen: Restart docker
