@@ -94,10 +94,12 @@
     - name: "ubuntu | Add ansible repository"
       apt_repository:
         repo: "{{ item.name | default(item) }}"
+        filename: "{{ item.filename | default(item.name) | default(item) }}"
         state: "{{ item.state | default(ubuntu_packages_state) }}"
         update_cache: yes
       with_items:
-        - ppa:ansible/ansible
+        - name: ppa:ansible/ansible
+          filename: ansible
       become: yes
 
     - name: "ubuntu | Configure packages"
