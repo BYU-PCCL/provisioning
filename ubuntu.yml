@@ -61,10 +61,10 @@
           state: absent
         - name: landscape-common
           state: absent
-        - name: libsane
-          state: absent
-        - name: libsane-common
-          state: absent
+        # - name: libsane
+        #   state: absent
+        # - name: libsane-common
+        #   state: absent
         - name: mcp-account-manager-uoa
           state: absent
         # - name: libreoffice*
@@ -74,8 +74,8 @@
         #   state: absent
         - name: rhythmbox*
           state: absent
-        - name: sane-utils
-          state: absent
+        # - name: sane-utils
+        #   state: absent
         - name: shotwell*
           state: absent
         - name: telepathy*
