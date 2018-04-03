@@ -62,32 +62,14 @@
 
           [Install]
           WantedBy=sockets.target
-        dest: /etc/systemd/system/docker-tcp.socket
+        dest: /etc/systemd/system/docker.socket
       become: yes
-      notify: Restart docker
+      # notify: Restart docker
   handlers:
-    - name: "docker | Stop docker service"
-      systemd:
-        name: docker
-        state: stopped
-        daemon_reload: no
-      listen: Restart docker
-      become: yes
-
-    - name: "docker | Restart docker socket service"
-      systemd:
-        name: docker-tcp.socket
-        state: restarted
-        enabled: yes
-        daemon_reload: yes
-      listen: Restart docker
-      become: yes
-
     - name: "docker | Restart docker service"
       systemd:
         name: docker
         state: restarted
-        enabled: yes
         daemon_reload: yes
       listen: Restart docker
       become: yes

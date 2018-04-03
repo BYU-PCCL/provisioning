@@ -49,41 +49,10 @@
     - name: "nvidia-docker | Configure nvidia-docker"
       copy:
         content: |+
-          [Unit]
-          Description=Docker Application Container Engine
-          Documentation=https://docs.docker.com
-          After=network-online.target docker.socket firewalld.service
-          Wants=network-online.target
-          Requires=docker.socket
-
           [Service]
-          Type=notify
-          # the default is not to use systemd for cgroups because the delegate issues still
-          # exists and systemd currently does not support the cgroup feature set required
-          # for containers run by docker
+          ExecStart=
           ExecStart=/usr/bin/dockerd -H fd:// --default-runtime=nvidia {{ nvidia_smi.stdout | regex_findall('UUID\s+:\s+(GPU-\w+)-.*') | map('regex_replace', '^(.*)$', '--node-generic-resource gpu=\1') | list | join(' ') }}
-          ExecReload=/bin/kill -s HUP $MAINPID
-          LimitNOFILE=1048576
-          # Having non-zero Limits causes performance problems due to accounting overhead
-          # in the kernel. We recommend using cgroups to do container-local accounting.
-          LimitNPROC=infinity
-          LimitCORE=infinity
-          # Uncomment TasksMax if your systemd version supports it.
-          # Only systemd 226 and above support this version.
-          TasksMax=infinity
-          TimeoutStartSec=0
-          # set delegate yes so that systemd does not reset the cgroups of docker containers
-          Delegate=yes
-          # kill only the docker process, not all processes in the cgroup
-          KillMode=process
-          # restart the docker process if it exits prematurely
-          Restart=on-failure
-          StartLimitBurst=3
-          StartLimitInterval=60s
-
-          [Install]
-          WantedBy=multi-user.target
-        dest: /etc/systemd/system/docker.service
+        dest: /etc/systemd/system/docker.service.d/
       become: yes
       notify: Restart docker
 
@@ -96,28 +65,10 @@
       become: yes
       notify: Restart docker
   handlers:
-    - name: "docker | Stop docker service"
-      systemd:
-        name: docker
-        state: stopped
-        daemon_reload: no
-      listen: Restart docker
-      become: yes
-
-    - name: "docker | Restart docker socket service"
-      systemd:
-        name: docker-tcp.socket
-        state: restarted
-        enabled: yes
-        daemon_reload: yes
-      listen: Restart docker
-      become: yes
-
     - name: "docker | Restart docker service"
       systemd:
         name: docker
-        state: started
-        enabled: yes
+        state: restarted
         daemon_reload: yes
       listen: Restart docker
       become: yes
