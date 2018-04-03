@@ -25,7 +25,7 @@
 
     - name: "nvidia-docker | Configure apt repositories"
       apt_repository:
-        repo: "{{ item.repo | default(item) }}"\
+        repo: "{{ item.repo | default(item) }}"
         # TODO: add default with regex...
         filename: "{{ item.filename }}"
         update_cache: yes
