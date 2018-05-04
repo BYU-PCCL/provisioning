@@ -8,6 +8,8 @@
 
 ## usage
 
+Ensure UEFI secure boot is [disabled](https://www.qualityology.com/tech/disable-asus-motherboards-uefi-secure-boot/)
+
 ```
 ansible-playbook bootstrap.yml --inventory=hosts --ask-pass --ask-become-pass
 ```
