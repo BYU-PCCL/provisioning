@@ -9,7 +9,8 @@
         - name: docker-compose
     - docker_packages_state: present
     - docker_apt_release_channel: stable
-    - docker_apt_repository: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
+    # use {{ ansible_distribution_release }} instead of xenial once docker updates their package
+    - docker_apt_repository: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} xenial {{ docker_apt_release_channel }}"
   tasks:
     - name: "docker | Configure dependencies"
       apt:
@@ -20,6 +21,8 @@
         - name: docker
           state: absent
         - name: docker-engine
+          state: absent
+        - name: docker.io
           state: absent
         - name: apt-transport-https
           state: present
@@ -52,7 +55,7 @@
     - name: "docker | Configure remote API"
       copy:
         content: |+
-          # See: https://coreos.com/os/docs/latest/customizing-docker.html
+          # https://coreos.com/os/docs/latest/customizing-docker.html
           Description=Docker Socket for the API
 
           [Socket]
@@ -64,12 +67,17 @@
           WantedBy=sockets.target
         dest: /etc/systemd/system/docker.socket
       become: yes
-      # notify: Restart docker
+      notify: Restart docker
   handlers:
-    - name: "docker | Restart docker service"
+    - name: "docker | Restart docker.socket and docker.service"
       systemd:
-        name: docker
-        state: restarted
-        daemon_reload: yes
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default('restarted') }}"
+        daemon_reload: "{{ item.daemon_reload | default('yes') }}"
+      with_items:
+        - name: docker.socket
+          daemon_reload: yes
+        - name: docker.service
+          daemon_reload: no
       listen: Restart docker
       become: yes
