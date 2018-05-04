@@ -1,0 +1,35 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+
+  tasks:
+    - block:
+      - name: "ubuntu-release-upgrade | Upgrade all packages to the latest version"
+        apt:
+          update_cache: yes
+          upgrade: full
+
+      - name: "ubuntu-release-upgrade | Ensure update-manager-core is installed."
+        apt:
+          name: update-manager-core
+          state: present
+
+      - name: "ubuntu-release-upgrade | Run do-release-upgrade non-interactively."
+        command: do-release-upgrade -f DistUpgradeViewNonInteractive
+        notify: Reboot host
+      when: ansible_distribution == 'Ubuntu' and ansible_distribution_version != '18.04'
+  handlers:
+    - name: "ubuntu-release-upgrade | Reboot host"
+      command: shutdown -r now "Reboot triggered by Ansible"
+      async: 0
+      poll: 0
+      ignore_errors: yes
+      listen: Reboot host
+      become: yes
+
+    - name: "ubuntu-release-upgrade | Wait for host to reboot"
+      wait_for_connection:
+        delay: 5
+      listen: Reboot host
+      become: no
