@@ -3,7 +3,7 @@
   tags:
     - nodejs
   vars:
-    - nodejs_version: 9
+    - nodejs_version: 10
     - nodejs_packages:
         - nodejs
     - nodejs_packages_state: present
