@@ -19,7 +19,7 @@
         - python3-wheel
     - python_pip3_packages:
         # TODO: figure out cuda version automatically
-        - http://download.pytorch.org/whl/cu90/torch-0.3.1-cp36-cp36m-linux_x86_64.whl
+        - http://download.pytorch.org/whl/cu91/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
         # - hyperdrive
         - jupyter
         - matplotlib
