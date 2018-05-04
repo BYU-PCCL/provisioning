@@ -8,7 +8,8 @@
       - name: "ubuntu-release-upgrade | Upgrade all packages to the latest version"
         apt:
           update_cache: yes
-          upgrade: full
+          upgrade: dist
+          autoremove: yes
 
       - name: "ubuntu-release-upgrade | Ensure update-manager-core is installed."
         apt:
