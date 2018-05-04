@@ -32,6 +32,7 @@
         state: present
         password: "{{ item.password }}"
         update_password: always
+        shell: /bin/bash
         generate_ssh_key: no
         groups: sudo
         append: yes
