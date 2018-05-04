@@ -32,3 +32,4 @@ serrano ansible_host=serrano.cs.byu.edu
 
 [all:vars]
 ansible_user=remote
+ansible_python_interpreter=/usr/bin/python3
