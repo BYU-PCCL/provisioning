@@ -1,0 +1,17 @@
+- name: libreoffice
+  hosts: all
+  tags:
+    - libreoffice
+  vars:
+    - libreoffice_packages:
+        - name: libreoffice
+    - libreoffice_packages_state: present
+  tasks:
+    - include_tasks: ../apt.yml apt_packages_state="{{ libreoffice_packages_state }}"
+
+    - name: "libreoffice | Configure packages"
+      apt:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(libreoffice_packages_state) }}"
+      with_items: "{{ libreoffice_packages }}"
+      become: yes

@@ -4,3 +4,4 @@
 - import_playbook: nodejs.yml
 - import_playbook: pycharm.yml
 - import_playbook: slack.yml
+- import_playbook: libreoffice.yml
