@@ -10,9 +10,9 @@
     - nvidia_docker_packages_state: present
     - nvidia_docker_repositories:
         - repo: "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
-          filename: libnvidia-container
+          filename: nvidia-docker
         - repo: "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
-          filename: nvidia-container-runtime
+          filename: nvidia-docker
         - repo: "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
           filename: nvidia-docker
   tasks:
@@ -37,7 +37,6 @@
       apt:
         name: "{{ item.name }}"
         state: "{{ item.state | default(nvidia_docker_packages_state) }}"
-        autoremove: yes
       with_items: "{{ nvidia_docker_packages }}"
       become: yes
       notify: Restart docker
@@ -46,13 +45,19 @@
       command: nvidia-smi -q
       register: nvidia_smi
 
+    - name: "docker | Ensure configuration directory is present"
+      file:
+        path: /etc/systemd/system/docker.service.d/
+        state: directory
+      become: yes
+
     - name: "nvidia-docker | Configure nvidia-docker"
       copy:
         content: |+
           [Service]
           ExecStart=
-          ExecStart=/usr/bin/dockerd -H fd:// --default-runtime=nvidia {{ nvidia_smi.stdout | regex_findall('UUID\s+:\s+(GPU-\w+)-.*') | map('regex_replace', '^(.*)$', '--node-generic-resource gpu=\1') | list | join(' ') }}
-        dest: /etc/systemd/system/docker.service.d/
+          ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375 --default-runtime=nvidia {{ nvidia_smi.stdout | regex_findall('UUID\s+:\s+(GPU-\w+)-.*') | map('regex_replace', '^(.*)$', '--node-generic-resource gpu=\1') | list | join(' ') }}
+        dest: /etc/systemd/system/docker.service.d/override.conf
       become: yes
       notify: Restart docker
 
