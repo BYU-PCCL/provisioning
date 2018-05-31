@@ -8,9 +8,9 @@
         - name: docker-ce
         - name: docker-compose
     - docker_packages_state: present
-    - docker_apt_release_channel: stable
-    # use {{ ansible_distribution_release }} instead of xenial once docker updates their package
-    - docker_apt_repository: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} xenial {{ docker_apt_release_channel }}"
+    # TODO: change to stable once docker supports bionic
+    - docker_apt_release_channel: edge
+    - docker_apt_repository: "deb [arch=amd64] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} {{ docker_apt_release_channel }}"
   tasks:
     - name: "docker | Configure dependencies"
       apt:
@@ -52,32 +52,38 @@
       with_items: "{{ docker_packages }}"
       become: yes
 
+    - name: "docker | Ensure configuration directory is present"
+      file:
+        path: /etc/systemd/system/docker.service.d/
+        state: directory
+      become: yes
+
     - name: "docker | Configure remote API"
       copy:
         content: |+
-          # https://coreos.com/os/docs/latest/customizing-docker.html
-          Description=Docker Socket for the API
-
-          [Socket]
-          ListenStream=2375
-          BindIPv6Only=both
-          Service=docker.service
-
-          [Install]
-          WantedBy=sockets.target
-        dest: /etc/systemd/system/docker.socket
+          # https://success.docker.com/article/how-do-i-enable-the-remote-api-for-dockerd
+          [Service]
+          ExecStart=
+          ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375
+        dest: /etc/systemd/system/docker.service.d/override.conf
       become: yes
       notify: Restart docker
+
+    - name: "docker | Ensure current user is in the docker group"
+      user:
+        name: "{{ ansible_user_id }}"
+        groups:
+          - docker
+      become: yes
+
   handlers:
-    - name: "docker | Restart docker.socket and docker.service"
+    - name: "docker | Restart docker.service"
       systemd:
         name: "{{ item.name | default(item) }}"
         state: "{{ item.state | default('restarted') }}"
         daemon_reload: "{{ item.daemon_reload | default('yes') }}"
       with_items:
-        - name: docker.socket
-          daemon_reload: yes
         - name: docker.service
-          daemon_reload: no
+          daemon_reload: yes
       listen: Restart docker
       become: yes
