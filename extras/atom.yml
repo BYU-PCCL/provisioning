@@ -1,0 +1,31 @@
+- name: atom
+  hosts: all
+  tags:
+    - atom
+  vars:
+    - atom_packages:
+        - atom
+    - atom_packages_state: present
+  tasks:
+    - include_tasks: ../apt.yml apt_packages_state="{{ atom_packages_state }}"
+    
+    - name: "atom | Add apt key"
+      apt_key:
+        url: https://packagecloud.io/AtomEditor/atom/gpgkey
+        state: "{{ atom_packages_state }}"
+      become: yes
+
+    - name: "atom | Add repository"
+      apt_repository:
+        repo: deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main
+        state: "{{ atom_packages_state }}"
+        filename: atom
+        update_cache: yes
+      become: yes
+
+    - name: "atom | Configure packages"
+      apt:
+        name: "{{ item.name | default(item) }}"
+        state: "{{ item.state | default(atom_packages_state) }}"
+      with_items: "{{ atom_packages }}"
+      become: yes
