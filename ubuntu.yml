@@ -5,8 +5,6 @@
     - ubuntu
   vars:
     - ubuntu_packages:
-        - name: ansible
-          state: present
         - name: build-essential
           state: present
         - name: curl
@@ -19,88 +17,17 @@
           state: present
         - name: nfs-common
           state: present
-        - name: openssl
-          state: present
         - name: wget
           state: present
-        # - name: account-*
-        #   state: absent
-        - name: aisleriot
-          state: absent
         - name: brltty
-          state: absent
-        # - name: colord
-        #   state: absent
-        - name: deja-dup*
-          state: absent
-        - name: duplicity
-          state: absent
-        - name: empathy*
-          state: absent
-        - name: evolution-data-server-online-accounts
-          state: absent
-        - name: example-content
           state: absent
         - name: gnome-accessibility-themes
           state: absent
-        - name: gnome-contacts
-          state: absent
-        - name: gnome-mahjongg
-          state: absent
-        - name: gnome-mines
-          state: absent
-        - name: gnome-orca
-          state: absent
-        - name: gnome-screensaver
-          state: absent
-        - name: gnome-sudoku
-          state: absent
-        - name: gnome-video-effects
-          state: absent
-        - name: gnomine
-          state: absent
-        - name: landscape-common
-          state: absent
-        # - name: libsane
-        #   state: absent
-        # - name: libsane-common
-        #   state: absent
-        - name: mcp-account-manager-uoa
-          state: absent
-        # - name: libreoffice*
-        #   state: absent
-        #   # libreoffice API
-        # - name: python3-uno
-        #   state: absent
-        - name: rhythmbox*
-          state: absent
-        # - name: sane-utils
-        #   state: absent
-        - name: shotwell*
-          state: absent
-        - name: telepathy*
-          state: absent
-        - name: thunderbird*
-          state: absent
-        - name: totem*
-          state: absent
-        # - name: unity-*
-        #   state: absent
     - ubuntu_packages_state: present
     - ubuntu_swappiness: 5
   tasks:
     - include_tasks: apt.yml apt_packages_state="{{ ubuntu_packages_state }}"
 
-    - name: "ubuntu | Add ansible repository"
-      apt_repository:
-        repo: "{{ item.name | default(item) }}"
-        filename: "{{ item.filename | default(item.name) | default(item) }}"
-        state: "{{ item.state | default(ubuntu_packages_state) }}"
-        update_cache: yes
-      with_items:
-        - name: ppa:ansible/ansible
-          filename: ansible
-      become: yes
 
     - name: "ubuntu | Configure packages"
       apt:
@@ -125,11 +52,4 @@
         fstype: nfs
         opts: auto,_netdev
         state: mounted
-      become: yes
-
-    - name: "ubuntu | Disable annoying networking message"
-      lineinfile:
-        path: /etc/default/avahi-daemon
-        line: AVAHI_DAEMON_DETECT_LOCAL=0
-        regexp: AVAHI_DAEMON_DETECT_LOCAL
       become: yes
