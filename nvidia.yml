@@ -7,25 +7,11 @@
   vars:
     # TOOD: find a better place to put this
     - cudnn_deb_url: /mnt/pccfs/not_backed_up/provisioning/resources/libcudnn7_7.1.2.21-1+cuda9.1_amd64.deb
-    # - cudnn_deb_url: /mnt/pccfs/not_backed_up/provisioning/resources/libcudnn7_7.0.5.15-1+cuda9.1_amd64.deb
     - nvidia_packages_state: present
     - nvidia_packages:
         - name: nvidia-driver-390
         - name: nvidia-cuda-toolkit
   tasks:
-    - name: "nvidia | Configure ppa:graphics-drivers apt repository"
-      apt_repository:
-        repo: ppa:graphics-drivers/ppa
-        filename: "graphics-drivers-ubuntu-ppa-{{ ansible_distribution_release }}"
-        state: "{{ nvidia_packages_state }}"
-      become: yes
-
-    # - name: "nvidia | Remove unecessary cuda repository key"
-    #   apt_key:
-    #     id: F796ECB0
-    #     state: absent
-    #   become: yes
-
     - name: "nvidia | Configure nvidia driver and cuda"
       apt:
         name: "{{ item.name | default(item) }}"
