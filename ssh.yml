@@ -11,13 +11,13 @@
           password: $6$Bs1Xag.d9LQBKOl$mXq16bjxzDx.AgsXV7torN2dybAF8O/wwcQYGm9qRrvwmzgBuyBKQ7vgXmwxHMBuwXwZRBuF81v92JhN1rL8z.
 
   tasks:
-    - name: ssh | Create 'sudo' group
+    - name: "ssh | Ensure 'sudo' group exists"
       group:
         name: sudo
         state: present
       become: yes
 
-    - name: ssh | Allow 'sudo' group to have sudo
+    - name: "ssh | Ensure 'sudo' group has sudo"
       lineinfile:
         dest: /etc/sudoers
         state: present
@@ -26,7 +26,7 @@
         validate: visudo -cf %s
       become: yes
 
-    - name: ssh | Create user and add to sudo group
+    - name: "ssh | Create user and add to sudo group"
       user:
         name: "{{ item.user }}"
         state: present
@@ -39,16 +39,16 @@
       with_items: "{{ remote_sudoers }}"
       become: yes
 
-    - name: ssh | Create new ssh key-pair on localhost
+    - name: "ssh | Ensure ssh key-pair is present on localhost"
       user:
         name: "{{ lookup('env', 'USER') }}"
         generate_ssh_key: yes
-        ssh_key_bits: 2048
+        ssh_key_bits: 4096
         ssh_key_file: "{{ ssh_key_file }}"
       delegate_to: localhost
       become: no
 
-    - name: ssh | Upload new public ssh key
+    - name: "ssh | Upload public ssh key"
       authorized_key:
         user: "{{ item.user }}"
         key: "{{ lookup('file', lookup('env','HOME') + '/' + ssh_key_file + '.pub') }}"
