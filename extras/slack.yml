@@ -4,7 +4,7 @@
     - slack
   vars:
     - slack_packages:
-        - deb: https://downloads.slack-edge.com/linux_releases/slack-desktop-3.1.0-amd64.deb
+        - deb: https://downloads.slack-edge.com/linux_releases/slack-desktop-3.2.0-beta25a7a50e-amd64.deb
     - slack_packages_state: present
   tasks:
     - include_tasks: ../apt.yml apt_packages_state="{{ slack_packages_state }}"
