@@ -74,6 +74,7 @@
       systemd:
         name: docker
         state: restarted
+        masked: no
         daemon_reload: yes
       listen: Restart docker
       become: yes

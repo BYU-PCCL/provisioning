@@ -76,15 +76,12 @@
           - docker
         append: yes
       become: yes
-
   handlers:
-    - name: "docker | Restart docker.service"
+    - name: "docker | Restart docker service"
       systemd:
-        name: "{{ item.name | default(item) }}"
-        state: "{{ item.state | default('restarted') }}"
-        daemon_reload: "{{ item.daemon_reload | default('yes') }}"
-      with_items:
-        - name: docker.service
-          daemon_reload: yes
+        name: docker
+        state: restarted
+        masked: no
+        daemon_reload: yes
       listen: Restart docker
       become: yes
