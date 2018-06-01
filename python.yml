@@ -20,18 +20,12 @@
     - python_pip3_packages:
         # TODO: figure out cuda version automatically
         - http://download.pytorch.org/whl/cu91/torch-0.4.0-cp36-cp36m-linux_x86_64.whl
-        # - hyperdrive
-        - jupyter
         - matplotlib
+        - ipython
         - numpy
-        - pandas
-        - pillow
-        - scikit-image
         - scipy
-        - sklearn
         - https://github.com/mind/wheels/releases/download/tf1.7-gpu-cuda91-nomkl/tensorflow-1.7.0-cp36-cp36m-linux_x86_64.whl
         - torchvision
-        - tqdm
     - python_packages_state: present
     - python_pip3_packages_state: "{{ python_packages_state }}"
 
