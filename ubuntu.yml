@@ -38,13 +38,6 @@
       with_items: "{{ ubuntu_packages }}"
       become: yes
 
-    - name: "ubuntu | Configure swappiness"
-      sysctl:
-        name: vm.swappiness
-        value: "{{ ubuntu_swappiness }}"
-        state: present
-      become: yes
-
     - name: "ubuntu | Mount pccfs"
       mount:
         path: /mnt/pccfs
