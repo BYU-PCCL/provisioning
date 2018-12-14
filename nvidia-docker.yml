@@ -9,11 +9,11 @@
         - name: nvidia-docker2
     - nvidia_docker_packages_state: present
     - nvidia_docker_repositories:
-        - repo: "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+        - repo: "deb https://nvidia.github.io/libnvidia-container/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/$(ARCH) /"
           filename: nvidia-docker
-        - repo: "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+        - repo: "deb https://nvidia.github.io/nvidia-container-runtime/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/$(ARCH) /"
           filename: nvidia-docker
-        - repo: "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/amd64 /"
+        - repo: "deb https://nvidia.github.io/nvidia-docker/{{ ansible_distribution | lower }}{{ ansible_distribution_version }}/$(ARCH) /"
           filename: nvidia-docker
   tasks:
     - name: "nvidia-docker | Configure apt key"
